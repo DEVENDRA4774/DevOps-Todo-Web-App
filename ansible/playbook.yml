@@ -1,0 +1,26 @@
+---
+- name: Deploy Todo Web App
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Ensure Docker is installed
+      apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+
+    - name: Ensure Docker Compose is installed
+      apt:
+        name: docker-compose
+        state: present
+
+    - name: Copy project files to server
+      copy:
+        src: ../
+        dest: /home/ubuntu/devops-todo-project
+        mode: '0755'
+
+    - name: Run application using Docker Compose
+      shell: |
+        cd /home/ubuntu/devops-todo-project
+        docker-compose up -d --build
