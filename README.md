@@ -42,19 +42,26 @@ This diagram illustrates the containerized deployment environment on the Docker 
 
 ```mermaid
 graph TD
-    subgraph "Docker Host"
-        subgraph "Network: bridge"
-            WebApp["Todo Web App<br/>(Flask)"]
-            Prometheus["Prometheus Server"]
-            Grafana["Grafana Dashboard"]
+    subgraph Host ["Docker Host (Linux)"]
+        subgraph Net ["Network: bridge"]
+            WebApp["Todo Web App<br/>(Flask:5000)"]
+            Prometheus["Prometheus Server<br/>(Monitoring:9090)"]
+            Grafana["Grafana Dashboard<br/>(Visuals:3000)"]
         end
     end
 
-    User((User)) -->|Port 5000| WebApp
-    User -->|Port 3000| Grafana
-    WebApp -->|Metrics Export| Prometheus
-    Prometheus -->|Scrape /metrics| WebApp
-    Grafana -->|Query Data| Prometheus
+    User((User)) -->|Access| WebApp
+    User -->|View| Grafana
+    WebApp -- "Metrics" --> Prometheus
+    Prometheus -- "Scrape" --> WebApp
+    Grafana -- "Query" --> Prometheus
+
+    style Host fill:#222,stroke:#666,stroke-width:2px,color:#fff
+    style Net fill:#333,stroke:#666,stroke-dasharray: 5 5,color:#fff
+    style WebApp fill:#1f77b4,stroke:#fff,stroke-width:2px,color:#fff
+    style Prometheus fill:#ff7f0e,stroke:#fff,stroke-width:2px,color:#fff
+    style Grafana fill:#d62728,stroke:#fff,stroke-width:2px,color:#fff
+    style User fill:#2ca02c,stroke:#fff,stroke-width:2px,color:#fff
 ```
 
 ### 2. Component Diagram (The "Architecture" View)
@@ -91,22 +98,29 @@ This diagram traces the flow of a user interaction and how it is observed by the
 
 ```mermaid
 sequenceDiagram
-    participant User
-    participant WebApp as Todo Web App
-    participant Prom as Prometheus
-    participant Graf as Grafana
+    autonumber
+    participant U as User
+    participant W as Todo Web App
+    participant P as Prometheus
+    participant G as Grafana
 
-    User->>WebApp: Create Task (POST /)
-    WebApp->>WebApp: Update In-Memory Task List
-    WebApp->>WebApp: Increment 'tasks_created' metric
-    WebApp-->>User: 200 OK (Render Index)
+    Note over U, G: Request & Metric Flow
 
-    Note over Prom, WebApp: Asynchronous Scraping
-    Prom->>WebApp: GET /metrics
-    WebApp-->>Prom: tasks_created_total{...} 10
-    
-    Note over Graf, Prom: Real-time Visualization
-    Graf->>Prom: Query metric values
-    Prom-->>Graf: Data points
-    Graf->>User: Update Dashboard Visualization
+    U->>W: Create Task (POST /)
+    W->>W: Update In-Memory List
+    W->>W: Incr 'tasks_created'
+    W-->>U: Render Index Page
+
+    rect rgb(40, 40, 40)
+        Note right of P: Scrape Interval
+        P->>W: GET /metrics
+        W-->>P: task_total 1
+    end
+
+    rect rgb(50, 50, 50)
+        Note left of G: UI Refresh
+        G->>P: Query Metrics
+        P-->>G: Data Points
+        G->>U: Update Dashboard
+    end
 ```
