@@ -61,22 +61,29 @@ graph TD
 This view shows the internal logic and integration points between the application and the monitoring stack.
 
 ```mermaid
-C4Component
-    title Component Diagram - DevOps Todo Web App
+graph TB
+    subgraph App ["Todo Web App (Flask)"]
+        UI["Web UI<br/>(HTML/Jinja2)"]
+        Logic["Flask API<br/>(Business Logic)"]
+        Client["Prometheus Client<br/>(Instrumentation)"]
+        
+        UI --- Logic
+        Logic --- Client
+    end
 
-    Container_Boundary(api, "Todo Web App") {
-        Component(ui, "Web UI", "HTML/Jinja2", "Frontend interface for managing tasks")
-        Component(logic, "Flask API", "Python/Flask", "Handles CRUD operations for Todo list")
-        Component(metrics, "Prometheus Client", "Python Library", "Exposes application metrics")
-    }
+    Prom["Prometheus Server<br/>(Metrics DB)"]
+    Graf["Grafana Dashboard<br/>(Visualization)"]
 
-    Container(prom, "Prometheus", "Service", "Time-series database for metrics")
-    Container(graf, "Grafana", "Service", "Visualization dashboard")
-
-    Rel(ui, logic, "Uses", "HTTP")
-    Rel(logic, metrics, "Instruments")
-    Rel(prom, metrics, "Scrapes metrics from", "HTTP/metrics")
-    Rel(graf, prom, "Queries data from")
+    Logic -- "1. Exposes /metrics" --> Client
+    Prom -- "2. Scrapes Data" --> Client
+    Graf -- "3. Queries" --> Prom
+    
+    style App fill:#333,stroke:#666,stroke-width:2px,color:#fff
+    style UI fill:#1f77b4,stroke:#fff,stroke-width:2px,color:#fff
+    style Logic fill:#1f77b4,stroke:#fff,stroke-width:2px,color:#fff
+    style Client fill:#1f77b4,stroke:#fff,stroke-width:2px,color:#fff
+    style Prom fill:#ff7f0e,stroke:#fff,stroke-width:2px,color:#fff
+    style Graf fill:#d62728,stroke:#fff,stroke-width:2px,color:#fff
 ```
 
 ### 3. Sequence Diagram (The "Process" View)
